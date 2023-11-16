@@ -31,10 +31,47 @@ const char* get_executable_directory()
     if (full_path == NULL)
         return NULL;
 
-    char *lastSlash = strrchr(full_path, DIRECTORY_SEPARATOR);
+    char *lastSlash = strrchr(full_path, DIRECTORY_SEPARATOR_CHAR);
 
     if (lastSlash != NULL)
         *lastSlash = '\0';
 
     return full_path;
+}
+
+const char* str_append(const char* destination, const char* source)
+{
+    int dest_length = strlen(destination) * sizeof(char);
+    int source_length = strlen(source) * sizeof(char);
+    char *result = malloc(dest_length + source_length);
+    
+    mempcpy(result, destination, dest_length);
+    mempcpy(result + dest_length, source, source_length);
+
+    return result;
+}
+
+bool file_exists(const char *file_path)
+{
+    FILE *file = fopen(file_path, "r");
+
+    if (file == NULL)
+        return false;
+
+    fclose(file);
+    return true;
+}
+
+bool create_empty_file(const char *file_path)
+{
+    if (file_exists(file_path))
+        return false;
+
+    FILE *file = fopen(file_path, "w");
+
+    if (file == NULL)
+        return false;
+
+    fclose(file);
+    return true;
 }
