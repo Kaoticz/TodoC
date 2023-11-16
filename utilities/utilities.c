@@ -2,13 +2,15 @@
 
 /* Public Functions */
 
-/// @brief Gets the absolute path to the executable file of this program.
-/// @remark Must be manually deallocated!
-/// @return A pointer to the string with the file path.
 const char* get_executable_path()
 {
     char buffer[MAX_PATH_LENGTH];
+
+#ifdef _WIN32
+    DWORD length = GetModuleFileName(NULL, buffer, MAX_PATH);
+#else
     ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+#endif
 
     if (length <= 0)
         return NULL;
@@ -22,9 +24,6 @@ const char* get_executable_path()
     return result;
 }
 
-/// @brief Gets the absolute path to the directory executable file of this program.
-/// @return A pointer to the string with the directory path.
-/// @remarks Must be manually deallocated!
 const char* get_executable_directory()
 {
     const char* full_path = get_executable_path();
