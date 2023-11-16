@@ -16,7 +16,7 @@ int main()
 
     const char* path = get_executable_directory();
     printf("Directory: %s\n", path);
-    free((char*)path);
+    free((char *)path);
 
     return 0;
 }

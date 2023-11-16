@@ -1,5 +1,6 @@
-# Exclude everything from the bin folder
+# Exclude the build files
 bin/
+obj/
 
 # Prerequisites
 *.d

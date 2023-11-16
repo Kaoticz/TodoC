@@ -5,10 +5,11 @@
             "label": "C/C++: gcc build active file",
             "command": "/usr/bin/make",
             "args": [
-                "${workspaceRoot}"
+                "-f",
+                "${workspaceRoot}/makefile"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceRoot}"
             },
             "problemMatcher": [
                 "$gcc"

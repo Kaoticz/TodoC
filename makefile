@@ -2,22 +2,24 @@
 
 CC = gcc
 CFLAGS = -fdiagnostics-color=always -Wall -Wextra -Winline -Wunreachable-code -Wmain -pedantic -lsqlite3 -g
-SRC_DIR = ./
+SRC_DIR = .
 UTILITIES_DIR = utilities
+OBJ_DIR = obj
 BIN_DIR = bin
+EXEC_NAME = main
 
 # Source files
 ifeq ($(OS),Windows_NT)
     SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*.h)
 else
-    SRCS = $(shell find $(SRC_DIR) -name '*.c' -o -name '*.h')
+    SRCS = $(shell find $(SRC_DIR)/ -name '*.c' -o -name '*.h')
 endif
 
-# Object files in the bin/ directory
-OBJS = $(patsubst $(SRC_DIR)/%.c,$(BIN_DIR)/%.o,$(SRCS))
+# Object files in the obj/ directory
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 # The target executable
-TARGET = $(BIN_DIR)/main
+TARGET = $(BIN_DIR)/$(EXEC_NAME)
 
 all: $(BIN_DIR) $(TARGET)
 
@@ -27,8 +29,9 @@ $(BIN_DIR):
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BIN_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(BIN_DIR)/
+	rm -rf $(BIN_DIR)/$(EXEC_NAME) $(OBJ_DIR)/
