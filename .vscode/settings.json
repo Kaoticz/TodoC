@@ -1,0 +1,6 @@
+{
+    "cmake.configureOnOpen": true,
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.default.cStandard": "gnu11",
+    "C_Cpp.vcFormat.space.pointerReferenceAlignment": "left"
+}
