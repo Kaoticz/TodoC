@@ -2,10 +2,12 @@
     #define SQLITEDB_H
 
     #include <sqlite3.h>
+    #include <stddef.h>
+    #include "../utilities/utilities.h"
 
-    typedef struct sqlite_db
-    {
-        char* connection_string;
-    };
+    /// @brief Creates and opens a SQLite database at the specified location.
+    /// @param db_location The absolute path to the database file.
+    /// @return The database or NULL if the file is not a valid SQLite database.
+    const sqlite3* create_sqlite_db(const char *db_location);
 
 #endif // SQLITEDB_H

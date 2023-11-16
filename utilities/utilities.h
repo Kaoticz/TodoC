@@ -17,7 +17,6 @@
         /// @brief The character that separates directories in a file system path.
         #define DIRECTORY_SEPARATOR "\\"
     #elif __unix__ // _WIN32
-        #include <linux/limits.h>
         #include <stdio.h>
         #include <stdlib.h>
         #include <unistd.h>
@@ -58,8 +57,13 @@
         /// @return True if the file exists, False otherwise.
         extern bool file_exists(const char* file_path);
 
+        /// @brief Checks if the specified file is empty.
+        /// @param file_path The absolute path to the file.
+        /// @return True if the file is empty, False otherwise.
+        extern bool is_file_empty(const char *file_path);
+
         /// @brief Creates an empty file in the specified location.
         /// @param file_path The absolute path to the new file.
         /// @return True if the file was successfully created, False otherwise.
-        extern bool create_empty_file(const char* file_path);
+        extern bool create_empty_file(const char *file_path);
 #endif // UTILITIES_H

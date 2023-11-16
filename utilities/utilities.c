@@ -13,7 +13,10 @@ const char* get_executable_path()
 #endif
 
     if (length <= 0)
+    {
+        fprintf(stderr, "Could not find the path to this executable.");
         return NULL;
+    }
 
     buffer[length] = '\0';
 
@@ -43,7 +46,7 @@ const char* str_append(const char* destination, const char* source)
 {
     int dest_length = strlen(destination) * sizeof(char);
     int source_length = strlen(source) * sizeof(char);
-    char *result = malloc(dest_length + source_length);
+    char* result = malloc(dest_length + source_length);
     
     mempcpy(result, destination, dest_length);
     mempcpy(result + dest_length, source, source_length);
@@ -51,9 +54,9 @@ const char* str_append(const char* destination, const char* source)
     return result;
 }
 
-bool file_exists(const char *file_path)
+bool file_exists(const char* file_path)
 {
-    FILE *file = fopen(file_path, "r");
+    FILE* file = fopen(file_path, "r");
 
     if (file == NULL)
         return false;
@@ -62,15 +65,35 @@ bool file_exists(const char *file_path)
     return true;
 }
 
-bool create_empty_file(const char *file_path)
+bool is_file_empty(const char* file_path)
+{
+    FILE *file = fopen(file_path, "rb");
+
+    if (file == NULL)
+    {
+        fprintf(stderr, "Could not open file at \"%s\"", file_path);
+        return false;
+    }
+
+    fseek(file, 0, SEEK_END); // Move the file pointer to the end
+    long size = ftell(file);  // Get the current position, which is the file size
+    fclose(file);
+
+    return (size > 0) ? false : true;
+}
+
+bool create_empty_file(const char* file_path)
 {
     if (file_exists(file_path))
         return false;
 
-    FILE *file = fopen(file_path, "w");
+    FILE* file = fopen(file_path, "w");
 
     if (file == NULL)
+    {
+        fprintf(stderr, "Could not create file at \"%s\"", file_path);
         return false;
+    }
 
     fclose(file);
     return true;
