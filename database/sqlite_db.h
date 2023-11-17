@@ -6,11 +6,14 @@
     #include "../utilities/utilities.h"
 
     /// @brief Object that contains all tasks from the database.
-    /// @attention Must be manually deallocated!
+    /// @attention Must be manually deallocated with "free_db_tasks()"!
     typedef struct db_tasks
     {
         /// @brief The amount of tasks stored in this object.
         const int amount;
+
+        /// @brief An array of integers that contains all task IDs or NULL if there aren't any.
+        const int* task_ids;
 
         /// @brief An array of strings that contains all tasks or NULL if there aren't any.
         const char** tasks;
@@ -21,12 +24,6 @@
     /// @return The database or NULL if the file is not a valid SQLite database.
     extern const sqlite3* create_sqlite_db(const char* db_location);
 
-    /// @brief Adds the specified task to the database.
-    /// @param db The database.
-    /// @param task The task to be added.
-    /// @return True if the task was successfully written to the database, False otherwise.
-    extern bool add_task(const sqlite3* db, const char* task);
-
     /// @brief Gets all tasks in the database.
     /// @attention Must be manually deallocated!
     /// @param db The database.
@@ -36,4 +33,16 @@
     /// @brief Deallocates the memory used by the specified db_tasks.
     /// @param database_tasks The db_tasks to deallocate memory from.
     extern void free_db_tasks(db_tasks* database_tasks);
+
+    /// @brief Adds the specified task to the database.
+    /// @param db The database.
+    /// @param task The task to be added.
+    /// @return True if the task was successfully written to the database, False otherwise.
+    extern bool add_task(const sqlite3* db, const char* task);
+
+    /// @brief Removed the task with the specified ID from the database.
+    /// @param db The database.
+    /// @param id The ID of the task to be removed.
+    /// @return True if the task was successfully removed from the database, False otherwise.
+    extern bool delete_task(const sqlite3* db, int id);
 #endif // SQLITEDB_H

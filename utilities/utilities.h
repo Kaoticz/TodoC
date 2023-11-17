@@ -35,6 +35,9 @@
         #error "This platform is not supported."
     #endif
 
+    /// @brief Marks multiple variables as unused.
+    #define UNUSED_VAR(...) (void)__VA_ARGS__
+
     #ifdef __GNUC__
         /// @brief Marks a function parameter as unused.
         #define UNUSED __attribute__((__unused__))
