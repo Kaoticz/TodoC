@@ -38,11 +38,18 @@
     /// @param db The database.
     /// @param task The task to be added.
     /// @return True if the task was successfully written to the database, False otherwise.
-    extern bool add_task(const sqlite3* db, const char* task);
+    extern bool insert_task(const sqlite3* db, const char* task);
 
-    /// @brief Removed the task with the specified ID from the database.
+    /// @brief Removes the task with the specified ID from the database.
     /// @param db The database.
     /// @param id The ID of the task to be removed.
     /// @return True if the task was successfully removed from the database, False otherwise.
     extern bool delete_task(const sqlite3* db, int id);
+
+    /// @brief Updates the task with the specified ID in the database.
+    /// @param db The database.
+    /// @param id The ID of the task.
+    /// @param new_task The new content of the task.
+    /// @return True if the task was successfully updated, False otherwise.
+    extern bool update_task(const sqlite3* db, int id, const char* new_task);
 #endif // SQLITEDB_H
