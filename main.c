@@ -25,5 +25,7 @@ int main()
         printf("%d. %s\n", counter, db_tasks.tasks[counter]);
     }
 
+    free_db_tasks(&db_tasks);
+
     return 0;
 }

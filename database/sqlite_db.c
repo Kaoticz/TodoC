@@ -26,7 +26,7 @@ static bool __execute_query(const sqlite3* db, const char* sql_query, int (*call
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
 /// @return Zero.
-static int __callback_count_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names);
+static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
 
 /// @brief Callback that returns the result of a "SELECT tasks" query.
 /// @param custom_state db_tasks* to write the query result to.
@@ -34,7 +34,7 @@ static int __callback_count_tasks(void* custom_state, int column_amount, char** 
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
 /// @return Zero.
-static int __callback_select_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names);
+static int __callback_select_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
 
 /* Public Functions */
 
@@ -83,6 +83,24 @@ bool add_task(const sqlite3* db, const char* task)
     }
 
     return true;
+}
+
+void free_db_tasks(db_tasks* db_tasks)
+{
+    if (db_tasks->amount == 0)
+        return;
+
+    for (int counter = 0; counter < db_tasks->amount; counter++)
+        free((char*)db_tasks->tasks[counter]);
+
+    free(db_tasks->tasks);
+
+    // Reset the amount
+    int* amount_ptr = (int*)&db_tasks->amount;
+    *amount_ptr = 0;
+
+    // Reset the tasks
+    db_tasks->tasks = NULL;
 }
 
 db_tasks get_all_tasks(const sqlite3* db)

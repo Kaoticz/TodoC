@@ -32,4 +32,8 @@
     /// @param db The database.
     /// @return An object that contains all tasks from the database.
     extern db_tasks get_all_tasks(const sqlite3* db);
+
+    /// @brief Deallocates the memory used by the specified db_tasks.
+    /// @param database_tasks The db_tasks to deallocate memory from.
+    extern void free_db_tasks(db_tasks* database_tasks);
 #endif // SQLITEDB_H
