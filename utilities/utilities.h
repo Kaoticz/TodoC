@@ -3,6 +3,7 @@
 
     #include <string.h>
     #include <stdbool.h>
+    #include <time.h>
 
     #ifdef _WIN32
         #include <windows.h>
@@ -66,4 +67,8 @@
         /// @param file_path The absolute path to the new file.
         /// @return True if the file was successfully created, False otherwise.
         extern bool create_empty_file(const char *file_path);
+
+        /// @brief Gets the current time in Unix seconds.
+        /// @return The Unix time in seconds.
+        extern time_t get_current_time();
 #endif // UTILITIES_H

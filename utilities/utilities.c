@@ -98,3 +98,14 @@ bool create_empty_file(const char* file_path)
     fclose(file);
     return true;
 }
+
+time_t get_current_time()
+{
+    time_t current_time = time(NULL);
+
+    if (current_time != (time_t) - 1)
+        return current_time;
+
+    fprintf(stderr, "Could not get the current time");
+    return 0;
+}
