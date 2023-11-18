@@ -47,6 +47,17 @@
     /// @return An object that contains all tasks from the database.
     extern db_tasks get_all_tasks(const sqlite3* db);
 
+    /// @brief Counts how many tasks are stored.
+    /// @param db The database.
+    /// @return The amount of tasks in the database.
+    extern int count_tasks(const sqlite3* db);
+
+    /// @brief Checks if a task with the specified ID exists in the database.
+    /// @param db The database.
+    /// @param id The ID of the task.
+    /// @return True if the task exists, False otherwise.
+    extern bool task_exists(const sqlite3* db, int id);
+
     /// @brief Deallocates the memory used by the specified db_task.
     /// @param db_task The db_task to deallocate memory from.
     extern void free_db_task(db_task* db_task);

@@ -98,16 +98,30 @@ const sqlite3* create_sqlite_db(const char* db_location)
     return (rc == SQLITE_OK) ? db : NULL;
 }
 
-db_task get_task(const sqlite3* db, int id)
+int count_tasks(const sqlite3* db)
+{
+    int task_amount = 0;
+    return (__execute_query(db, "SELECT COUNT(*) FROM tasks;", __callback_count_tasks, &task_amount))
+        ? task_amount
+        : -1;
+}
+
+bool task_exists(const sqlite3* db, int id)
 {
     bool task_exists = false;
-    bool db_success = __execute_parameterized_query(db, "SELECT 1 FROM tasks WHERE id = ? LIMIT 1;", &task_exists, __parameterized_callback_count_tasks, __prepare_id_query, 1, id);
+    return (__execute_parameterized_query(db, "SELECT 1 FROM tasks WHERE id = ? LIMIT 1;", &task_exists, __parameterized_callback_count_tasks, __prepare_id_query, 1, id))
+        && task_exists;
+}
+
+db_task get_task(const sqlite3* db, int id)
+{
+    bool exists = task_exists(db, id);
 
     db_task db_task = {
         .length = 0,
         .task = NULL};
 
-    if (!db_success || !task_exists)
+    if (!exists)
         return db_task;
 
     const char* sql_query = "SELECT task FROM tasks WHERE id = ?;";
@@ -118,8 +132,7 @@ db_task get_task(const sqlite3* db, int id)
 
 db_tasks get_all_tasks(const sqlite3* db)
 {
-    int task_amount = 0;
-    __execute_query(db, "SELECT COUNT(*) FROM tasks;", __callback_count_tasks, &task_amount);
+    int task_amount = count_tasks(db);
 
     db_tasks db_tasks = {
         .amount = task_amount,
@@ -127,7 +140,7 @@ db_tasks get_all_tasks(const sqlite3* db)
         .tasks = (task_amount == 0) ? NULL : calloc(task_amount, sizeof(char*))
     };
 
-    if (task_amount == 0)
+    if (task_amount <= 0)
         return db_tasks;
 
     __execute_query(db, "SELECT id, task FROM tasks;", __callback_select_tasks, &db_tasks);
