@@ -19,10 +19,27 @@
         const char** tasks;
     } db_tasks;
 
+    /// @brief Object that contains one task from the database.
+    /// @attention Must be manually deallocated with "free)db_task()"!
+    typedef struct db_task
+    {
+        /// @brief The length of the task.
+        const int length;
+
+        /// @brief The string of the task.
+        const char* task;
+    } db_task;
+
     /// @brief Creates and opens a SQLite database at the specified location.
     /// @param db_location The absolute path to the database file.
     /// @return The database or NULL if the file is not a valid SQLite database.
     extern const sqlite3* create_sqlite_db(const char* db_location);
+
+    /// @brief Gets the task with the specified ID from the database.
+    /// @param db The database.
+    /// @param id The ID of the task.
+    /// @return The requested task, or NULL if it's not found.
+    extern db_task get_task(const sqlite3* db, int id);
 
     /// @brief Gets all tasks in the database.
     /// @attention Must be manually deallocated!
@@ -30,9 +47,13 @@
     /// @return An object that contains all tasks from the database.
     extern db_tasks get_all_tasks(const sqlite3* db);
 
+    /// @brief Deallocates the memory used by the specified db_task.
+    /// @param db_task The db_task to deallocate memory from.
+    extern void free_db_task(db_task* db_task);
+
     /// @brief Deallocates the memory used by the specified db_tasks.
-    /// @param database_tasks The db_tasks to deallocate memory from.
-    extern void free_db_tasks(db_tasks* database_tasks);
+    /// @param db_tasks The db_tasks to deallocate memory from.
+    extern void free_db_tasks(db_tasks* db_tasks);
 
     /// @brief Adds the specified task to the database.
     /// @param db The database.

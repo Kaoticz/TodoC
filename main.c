@@ -13,14 +13,16 @@ int main()
     const char* dir_path = get_executable_directory();
     const char* db_path = str_append(dir_path, DIRECTORY_SEPARATOR "test.db");
     const sqlite3* db = create_sqlite_db(db_path);
-    //bool result = insert_task(db, "Sample task.");
+    bool result = insert_task(db, "Sample task.");
     db_tasks db_tasks = get_all_tasks(db);
 
     free((char*)dir_path);
     free((char*)db_path);
 
-    printf("Update: %d\n", update_task(db, 5, "Blep!"));
-    
+    db_task fifth_task = get_task(db, 5);
+    printf("Task 5: %s\n", fifth_task.task);
+    free_db_task(&fifth_task);
+
     int last_id = 0;
     for (int counter = 0; counter < db_tasks.amount; counter++)
     {

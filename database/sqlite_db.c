@@ -23,11 +23,13 @@ static bool __execute_query(const sqlite3* db, const char* sql_query, int (*call
 /// @brief Executes a parameterized SQL query.
 /// @param db The SQLite database.
 /// @param sql_query The SQL query to execute.
-/// @param callback The function to execute to add the parameters to the query.
+/// @param custom_state Pointer to an object that's being passed into the db_callback function.
+/// @param db_callback The function to execute when a row is read from the database.
+/// @param query_callback The function to execute to add the parameters to the query.
 /// @param arg_count The amount of parameters in the query.
 /// @param ... The parameters to be added to the query.
 /// @return True if the query completed successfully, False otherwise.
-static bool __execute_parameterized_query(const sqlite3* db, const char* sql_query, int (*callback)(sqlite3_stmt*, va_list, int), int arg_count, ...);
+static bool __execute_parameterized_query(const sqlite3* db, const char* sql_query, void* custom_state, int (*db_callback)(void*, sqlite3_stmt*), int (*query_callback)(sqlite3_stmt*, va_list, int), int arg_count, ...);
 
 /// @brief Adds query parameters for "insert_task".
 /// @param stmt The compiled SQL statement.
@@ -36,19 +38,19 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
 /// @return Zero if the operation succeeded, non-zero otherwise.
 static int __prepare_insert_query(sqlite3_stmt* stmt, va_list args, int arg_count);
 
-/// @brief Adds query parameters for "delete_task".
+/// @brief Adds a query parameters for a single int.
 /// @param stmt The compiled SQL statement.
 /// @param args The arguments to be added to the query.
 /// @param arg_count The amount of arguments to be added.
 /// @return Zero if the operation succeeded, non-zero otherwise.
-static int __prepare_delete_query(sqlite3_stmt* stmt, va_list args, int arg_count);
+static int __prepare_id_query(sqlite3_stmt* stmt, va_list args, int arg_count);
 
-/// @brief Adds query parameters for "update_task".
+/// @brief Adds query parameters for a string and an int.
 /// @param stmt The compiled SQL statement.
 /// @param args The arguments to be added to the query.
 /// @param arg_count The amount of arguments to be added.
 /// @return Zero if the operation succeeded, non-zero otherwise.
-static int __prepare_update_query(sqlite3_stmt* stmt, va_list args, int arg_count);
+static int __prepare_task_and_id_query(sqlite3_stmt* stmt, va_list args, int arg_count);
 
 /// @brief Callback that returns the result of a "COUNT(*)" query.
 /// @param custom_state int* to write the query result to.
@@ -66,6 +68,18 @@ static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, 
 /// @return Zero.
 static int __callback_select_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
 
+/// @brief Callback that returns the result of a parameterized "SELECT COUNT(*) tasks" query.
+/// @param custom_state int* to write the query result to.
+/// @param stmt The compiled SQL statement.
+/// @return Zero.
+static int __parameterized_callback_count_tasks(void* custom_state, sqlite3_stmt* stmt);
+
+/// @brief Callback that returns the result of a parameterized "SELECT tasks" query.
+/// @param custom_state db_task* to write the query result to.
+/// @param stmt The compiled SQL statement.
+/// @return Zero.
+static int __parameterized_callback_read_task(void* custom_state, sqlite3_stmt* stmt);
+
 /* Public Functions */
 
 const sqlite3* create_sqlite_db(const char* db_location)
@@ -82,6 +96,24 @@ const sqlite3* create_sqlite_db(const char* db_location)
     const int rc = sqlite3_open(db_location, &db);
 
     return (rc == SQLITE_OK) ? db : NULL;
+}
+
+db_task get_task(const sqlite3* db, int id)
+{
+    bool task_exists = false;
+    bool db_success = __execute_parameterized_query(db, "SELECT 1 FROM tasks WHERE id = ? LIMIT 1;", &task_exists, __parameterized_callback_count_tasks, __prepare_id_query, 1, id);
+
+    db_task db_task = {
+        .length = 0,
+        .task = NULL};
+
+    if (!db_success || !task_exists)
+        return db_task;
+
+    const char* sql_query = "SELECT task FROM tasks WHERE id = ?;";
+    __execute_parameterized_query(db, sql_query, &db_task, __parameterized_callback_read_task, __prepare_id_query, 1, id);
+
+    return db_task;
 }
 
 db_tasks get_all_tasks(const sqlite3* db)
@@ -126,6 +158,21 @@ void free_db_tasks(db_tasks* db_tasks)
     db_tasks->tasks = NULL;
 }
 
+void free_db_task(db_task* db_task)
+{
+    if (db_task->length == 0)
+        return;
+
+    free(db_task->task);
+
+    // Reset the length
+    int* length_ptr = (int*)&db_task->length;
+    *length_ptr = 0;
+
+    // Reset the task.
+    db_task->task = NULL;
+}
+
 bool insert_task(const sqlite3* db, const char* task)
 {
     const char* sql_query = "INSERT INTO tasks (task, created_at) VALUES (?, ?);";
@@ -135,13 +182,13 @@ bool insert_task(const sqlite3* db, const char* task)
 bool delete_task(const sqlite3* db, int id)
 {
     const char* sql_query = "DELETE FROM tasks WHERE id = ?;";
-    return __execute_parameterized_query(db, sql_query, __prepare_delete_query, 1, id);
+    return __execute_parameterized_query(db, sql_query, NULL, NULL, __prepare_id_query, 1, id);
 }
 
 bool update_task(const sqlite3* db, int id, const char* new_task)
 {
     const char* sql_query = "UPDATE tasks SET task = ? WHERE id = ?;";
-    return __execute_parameterized_query(db, sql_query, __prepare_update_query, 2, new_task, id);
+    return __execute_parameterized_query(db, sql_query, NULL, NULL, __prepare_task_and_id_query, 2, new_task, id);
 }
 
 /* Private Functions */
@@ -187,7 +234,8 @@ static bool __execute_query(const sqlite3* db, const char* sql_query, int (*call
     return false;
 }
 
-static bool __execute_parameterized_query(const sqlite3* db, const char* sql_query, int (*callback)(sqlite3_stmt*, va_list, int), int arg_count, ...)
+static bool __execute_parameterized_query(const sqlite3* db, const char* sql_query, void* custom_state, int (*read_callback)(void*, sqlite3_stmt*),
+    int (*query_callback)(sqlite3_stmt*, va_list, int), int arg_count, ...)
 {
     sqlite3_stmt* stmt = NULL;
     va_list args;
@@ -195,7 +243,7 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
     va_start(args, arg_count);
 
     int db_code = sqlite3_prepare_v2((sqlite3*)db, sql_query, -1, &stmt, NULL)  // Prepare the database for a parameterized query.
-        || callback(stmt, args, arg_count);                                     // Add the arguments.
+        || query_callback(stmt, args, arg_count);                                     // Add the arguments.
 
     va_end(args);
 
@@ -206,7 +254,31 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
     }
 
     // Execute the query.
-    db_code = sqlite3_step(stmt);
+    if (read_callback == NULL)
+    {
+        do
+        {
+            db_code = sqlite3_step(stmt);
+        } while (db_code == SQLITE_ROW);
+    }
+    else
+    {
+        db_code = sqlite3_step(stmt);
+        while (db_code == SQLITE_ROW)
+        {
+            int callback_code = read_callback(custom_state, stmt);
+            
+            if (callback_code != 0)
+            {
+                sqlite3_finalize(stmt);
+                fprintf(stderr, "Read callback returned error %d\n", callback_code);
+
+                return false;
+            }
+
+            db_code = sqlite3_step(stmt);
+        }
+    }
 
     // Clean up
     sqlite3_finalize(stmt);
@@ -227,13 +299,13 @@ static int __prepare_insert_query(sqlite3_stmt* stmt, va_list args, int arg_coun
         || sqlite3_bind_int64(stmt, 2, va_arg(args, time_t));                   // Add 'created_at'.
 }
 
-static int __prepare_delete_query(sqlite3_stmt* stmt, va_list args, int arg_count)
+static int __prepare_id_query(sqlite3_stmt* stmt, va_list args, int arg_count)
 {
     UNUSED_VAR(arg_count);
     return sqlite3_bind_int(stmt, 1, va_arg(args, int));    // Add 'id'.
 }
 
-static int __prepare_update_query(sqlite3_stmt* stmt, va_list args, int arg_count)
+static int __prepare_task_and_id_query(sqlite3_stmt* stmt, va_list args, int arg_count)
 {
     UNUSED_VAR(arg_count);
     return sqlite3_bind_text(stmt, 1, va_arg(args, char*), -1, SQLITE_STATIC)   // Add 'new_task'.
@@ -256,11 +328,36 @@ static int __callback_select_tasks(void* custom_state, UNUSED int column_amount,
     ((int*)db_tasks->task_ids)[__select_tasks_current_index] = atoi(column_contents[0]);
 
     // Set the array of strings.
-    int task_length = strlen(column_contents[1]) + 1;
-    char* content_copy = malloc(task_length);
+    const int task_length = strlen(column_contents[1]) + 1;
+    const char* content_copy = malloc(task_length);
     db_tasks->tasks[__select_tasks_current_index++] = content_copy;
 
     strcpy(content_copy, column_contents[1]);
+
+    return 0;
+}
+
+static int __parameterized_callback_count_tasks(void* custom_state, sqlite3_stmt* stmt)
+{
+    *((int*)custom_state) = sqlite3_column_int(stmt, 0);
+    return 0;
+}
+
+static int __parameterized_callback_read_task(void* custom_state, sqlite3_stmt* stmt)
+{
+    db_task* db_task = custom_state;
+    const char* task = (const char*)sqlite3_column_text(stmt, 0);
+    const int task_length = strlen(task) + 1;
+    const char* content_copy = malloc(task_length);
+
+    // Set the task's length.
+    int* amount_ptr = (int*)&db_task->length;
+    *amount_ptr = task_length;
+
+    // Set the task.
+    db_task->task = content_copy;
+
+    strcpy(content_copy, task);
 
     return 0;
 }
