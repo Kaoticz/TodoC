@@ -82,6 +82,19 @@ static int __parameterized_callback_read_task(void* custom_state, sqlite3_stmt* 
 
 /* Public Functions */
 
+const sqlite3* get_db()
+{
+    const char* current_dir = get_executable_directory();
+    const char* db_location = str_append(current_dir, DIRECTORY_SEPARATOR "todoc.db");
+    const sqlite3* db = create_sqlite_db(db_location);
+
+    // Cleanup
+    free((char*)current_dir);
+    free((char*)db_location);
+
+    return db;
+}
+
 const sqlite3* create_sqlite_db(const char* db_location)
 {
     if (!file_exists(db_location) || is_file_empty(db_location))
@@ -136,8 +149,8 @@ db_tasks get_all_tasks(const sqlite3* db)
 
     db_tasks db_tasks = {
         .amount = task_amount,
-        .task_ids = (task_amount == 0) ? NULL : calloc(task_amount, sizeof(int)),
-        .tasks = (task_amount == 0) ? NULL : calloc(task_amount, sizeof(char*))
+        .task_ids = (task_amount <= 0) ? NULL : calloc(task_amount, sizeof(int)),
+        .tasks = (task_amount <= 0) ? NULL : calloc(task_amount, sizeof(char*))
     };
 
     if (task_amount <= 0)

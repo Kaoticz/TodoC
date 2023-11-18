@@ -125,3 +125,20 @@ void swap(int* x, int* y)
     *y = *x;
     *x = temp;
 }
+
+int flush(FILE* stream)
+{
+    int counter = 0;
+    char character;
+    const char stop_char = (stream == stdin) ? '\n' : EOF;
+
+    while ((character = fgetc(stream)) != stop_char && character != EOF)
+        counter++;
+
+    if (character == '\n')
+        counter++;
+    else if (character == EOF)
+        counter = -1;
+
+    return counter;
+}

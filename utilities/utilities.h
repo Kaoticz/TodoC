@@ -97,4 +97,11 @@
     /// @param x The first variable.
     /// @param y The second variable.
     extern void swap(int* x, int* y);
+
+    /// @brief Flushes a stream.
+    /// @attention If flushing "stdin" when it's empty, the program waits for user input.
+    /// @param stream The stream to be flushed.
+    /// @return The number of characters removed from the stream or -1 if an error
+    /// @return occurred (check feof() for "stdin" or ferror() for any other stream).
+    extern int flush(FILE* stream);
 #endif // UTILITIES_H
