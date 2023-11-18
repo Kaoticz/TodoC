@@ -17,6 +17,9 @@
 
         /// @brief The character that separates directories in a file system path.
         #define DIRECTORY_SEPARATOR "\\"
+
+        /// @brief The platform-specific newline.
+        #define NEWLINE "\r\n"
     #elif __unix__ // _WIN32
         #include <stdio.h>
         #include <stdlib.h>
@@ -31,6 +34,9 @@
 
         /// @brief The character that separates directories in a file system path.
         #define DIRECTORY_SEPARATOR "/"
+
+        /// @brief The platform-specific newline.
+        #define NEWLINE "\n"
     #else   // __unix__
         #error "This platform is not supported."
     #endif
@@ -82,4 +88,13 @@
     /// @brief Gets the current time in Unix seconds.
     /// @return The Unix time in seconds.
     extern time_t get_current_time();
+
+    /// @brief Clears the console.
+    /// @return The exit code of the clear command.
+    extern int clear_console();
+
+    /// @brief Swaps the values of two variables with each other.
+    /// @param x The first variable.
+    /// @param y The second variable.
+    extern void swap(int* x, int* y);
 #endif // UTILITIES_H

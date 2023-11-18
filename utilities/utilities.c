@@ -14,7 +14,7 @@ const char* get_executable_path()
 
     if (length <= 0)
     {
-        fprintf(stderr, "Could not find the path to this executable.");
+        fprintf(stderr, "Could not find the path to this executable." NEWLINE);
         return NULL;
     }
 
@@ -71,7 +71,7 @@ bool is_file_empty(const char* file_path)
 
     if (file == NULL)
     {
-        fprintf(stderr, "Could not open file at \"%s\"", file_path);
+        fprintf(stderr, "Could not open file at \"%s\"" NEWLINE, file_path);
         return false;
     }
 
@@ -91,7 +91,7 @@ bool create_empty_file(const char* file_path)
 
     if (file == NULL)
     {
-        fprintf(stderr, "Could not create file at \"%s\"", file_path);
+        fprintf(stderr, "Could not create file at \"%s\"" NEWLINE, file_path);
         return false;
     }
 
@@ -106,6 +106,22 @@ time_t get_current_time()
     if (current_time != (time_t) - 1)
         return current_time;
 
-    fprintf(stderr, "Could not get the current time");
+    fprintf(stderr, "Could not get the current time" NEWLINE);
     return 0;
+}
+
+int clear_console()
+{
+    #ifdef _WIN32
+        return system("cls");
+    #else
+        return system("clear");
+    #endif
+}
+
+void swap(int* x, int* y)
+{
+    int temp = *y;
+    *y = *x;
+    *x = temp;
 }

@@ -57,7 +57,7 @@ static int __prepare_task_and_id_query(sqlite3_stmt* stmt, va_list args, int arg
 /// @param column_amount The amount of columns returned in the query.
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
-/// @return Zero.
+/// @return Zero if the operation succeeded, non-zero otherwise.
 static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
 
 /// @brief Callback that returns the result of a "SELECT tasks" query.
@@ -65,19 +65,19 @@ static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, 
 /// @param column_amount The amount of columns returned in the query.
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
-/// @return Zero.
+/// @return Zero if the operation succeeded, non-zero otherwise.
 static int __callback_select_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
 
 /// @brief Callback that returns the result of a parameterized "SELECT COUNT(*) tasks" query.
 /// @param custom_state int* to write the query result to.
 /// @param stmt The compiled SQL statement.
-/// @return Zero.
+/// @return Zero if the operation succeeded, non-zero otherwise.
 static int __parameterized_callback_count_tasks(void* custom_state, sqlite3_stmt* stmt);
 
 /// @brief Callback that returns the result of a parameterized "SELECT tasks" query.
 /// @param custom_state db_task* to write the query result to.
 /// @param stmt The compiled SQL statement.
-/// @return Zero.
+/// @return Zero if the operation succeeded, non-zero otherwise.
 static int __parameterized_callback_read_task(void* custom_state, sqlite3_stmt* stmt);
 
 /* Public Functions */
@@ -163,7 +163,7 @@ void free_db_task(db_task* db_task)
     if (db_task->length == 0)
         return;
 
-    free(db_task->task);
+    free((char*)db_task->task);
 
     // Reset the length
     int* length_ptr = (int*)&db_task->length;
@@ -176,7 +176,7 @@ void free_db_task(db_task* db_task)
 bool insert_task(const sqlite3* db, const char* task)
 {
     const char* sql_query = "INSERT INTO tasks (task, created_at) VALUES (?, ?);";
-    return __execute_parameterized_query(db, sql_query, __prepare_insert_query, 2, task, get_current_time());
+    return __execute_parameterized_query(db, sql_query, NULL, NULL, __prepare_insert_query, 2, task, get_current_time());
 }
 
 bool delete_task(const sqlite3* db, int id)
@@ -200,7 +200,7 @@ static bool __initialize_database(const char *db_location)
 
     if (command_code != SQLITE_OK)
     {
-        fprintf(stderr, "Could not initialize database at \"%s\"\nError: %s\n", db_location, sqlite3_errmsg(db));
+        fprintf(stderr, "Could not initialize database at \"%s\"" NEWLINE "Error: %s" NEWLINE, db_location, sqlite3_errmsg(db));
         sqlite3_close(db);
 
         return false;
@@ -228,7 +228,7 @@ static bool __execute_query(const sqlite3* db, const char* sql_query, int (*call
     if (command_code == SQLITE_OK)
         return true;
 
-    fprintf(stderr, "SQLite query error: %s\n", err_msg);
+    fprintf(stderr, "SQLite query error: %s" NEWLINE, err_msg);
     sqlite3_free(err_msg);
 
     return false;
@@ -243,13 +243,13 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
     va_start(args, arg_count);
 
     int db_code = sqlite3_prepare_v2((sqlite3*)db, sql_query, -1, &stmt, NULL)  // Prepare the database for a parameterized query.
-        || query_callback(stmt, args, arg_count);                                     // Add the arguments.
+        || query_callback(stmt, args, arg_count);                               // Add the arguments.
 
     va_end(args);
 
     if (db_code != SQLITE_OK)
     {
-        fprintf(stderr, "Query parametization failed: %s\n", sqlite3_errmsg((sqlite3*)db));
+        fprintf(stderr, "Query parametization failed: %s" NEWLINE, sqlite3_errmsg((sqlite3*)db));
         return false;
     }
 
@@ -271,7 +271,7 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
             if (callback_code != 0)
             {
                 sqlite3_finalize(stmt);
-                fprintf(stderr, "Read callback returned error %d\n", callback_code);
+                fprintf(stderr, "Read callback returned error %d" NEWLINE, callback_code);
 
                 return false;
             }
@@ -285,7 +285,7 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
 
     if (db_code != SQLITE_DONE)
     {
-        fprintf(stderr, "SQLite query error: %s\n", sqlite3_errmsg((sqlite3*)db));
+        fprintf(stderr, "SQLite query error: %s" NEWLINE, sqlite3_errmsg((sqlite3*)db));
         return false;
     }
 
@@ -329,7 +329,7 @@ static int __callback_select_tasks(void* custom_state, UNUSED int column_amount,
 
     // Set the array of strings.
     const int task_length = strlen(column_contents[1]) + 1;
-    const char* content_copy = malloc(task_length);
+    char* content_copy = malloc(task_length);
     db_tasks->tasks[__select_tasks_current_index++] = content_copy;
 
     strcpy(content_copy, column_contents[1]);
@@ -348,7 +348,7 @@ static int __parameterized_callback_read_task(void* custom_state, sqlite3_stmt* 
     db_task* db_task = custom_state;
     const char* task = (const char*)sqlite3_column_text(stmt, 0);
     const int task_length = strlen(task) + 1;
-    const char* content_copy = malloc(task_length);
+    char* content_copy = malloc(task_length);
 
     // Set the task's length.
     int* amount_ptr = (int*)&db_task->length;
