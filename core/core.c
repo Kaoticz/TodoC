@@ -36,7 +36,7 @@ static const char* get_user_text_input(const char* optional_message);
 /// @param input The user's input.
 /// @param message The message returned by the operation. May be NULL.
 /// @return Zero if the operation executed successfuly or failed in a non-critical way,
-/// @return non-zero if a critical error occurred and the program must shutdown.
+/// @return non-zero if a critical error occurred and the program must be terminated.
 static int __dispatcher(const sqlite3* db, const int input, char* message);
 
 /// @brief Creates a new task.
@@ -103,6 +103,8 @@ int app_loop()
         if (status_code != EXIT_SUCCESS)
         {
             fprintf(stderr, message);
+            sqlite3_close((sqlite3*)db);
+
             return status_code;
         }
 
@@ -111,7 +113,7 @@ int app_loop()
     clear_console();
     sqlite3_close((sqlite3*)db);
 
-    return 0;
+    return status_code;
 }
 
 /* Private Functions */
@@ -208,7 +210,6 @@ static const char* get_user_text_input(const char* optional_message)
 
 static int __dispatcher(const sqlite3* db, const int menu_selection, char* message)
 {
-    int status_code = 0;
     clear_console();
 
     switch (menu_selection)
@@ -276,7 +277,7 @@ static int __dispatcher(const sqlite3* db, const int menu_selection, char* messa
             break;
     };
 
-    return status_code;
+    return 0;
 }
 
 static bool __create_task(const sqlite3* db, const char* task, char* message)
