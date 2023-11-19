@@ -42,15 +42,7 @@
     #endif
 
     /// @brief Marks multiple variables as unused.
-    #define UNUSED_VAR(...) (void)__VA_ARGS__
-
-    #ifdef __GNUC__
-        /// @brief Marks a function parameter as unused.
-        #define UNUSED __attribute__((__unused__))
-    #else
-        /// @brief Marks a function parameter as unused.
-        #define UNUSED UNUSED_##x
-    #endif
+    #define UNUSED(...) dev_null(0, __VA_ARGS__);
 
     /// @brief Gets the absolute path to the executable file of this program.
     /// @attention Must be manually deallocated!
@@ -104,4 +96,11 @@
     /// @return The number of characters removed from the stream or -1 if an error
     /// @return occurred (check feof() for "stdin" or ferror() for any other stream).
     extern int flush(FILE* stream);
+
+    /// @brief Function used in conjunction with the "UNUSED()" macro to supress compiler
+    /// @brief warnings for unused parameters.
+    /// @attention Don't use this function directly. Use the "UNUSED()" macro instead.
+    /// @param count Unused parameter so the variadic function compiles.
+    /// @param ... The arguments expanded by "__VA_ARGS__".
+    extern void dev_null(int count, ...);
 #endif // UTILITIES_H

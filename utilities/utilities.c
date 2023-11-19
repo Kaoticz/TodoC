@@ -142,3 +142,8 @@ int flush(FILE* stream)
 
     return counter;
 }
+
+void dev_null(int count, ...)
+{
+    (void)(count);
+}

@@ -58,7 +58,7 @@ static int __prepare_task_and_id_query(sqlite3_stmt* stmt, va_list args, int arg
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
 /// @return Zero if the operation succeeded, non-zero otherwise.
-static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
+static int __callback_count_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names);
 
 /// @brief Callback that returns the result of a "SELECT tasks" query.
 /// @param custom_state db_tasks* to write the query result to.
@@ -66,7 +66,7 @@ static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, 
 /// @param column_contents An array of strings with the content of all columns in a single row.
 /// @param column_names An array of strings with the name of all columns in a single row.
 /// @return Zero if the operation succeeded, non-zero otherwise.
-static int __callback_select_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names);
+static int __callback_select_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names);
 
 /// @brief Callback that returns the result of a parameterized "SELECT COUNT(*) tasks" query.
 /// @param custom_state int* to write the query result to.
@@ -321,34 +321,38 @@ static bool __execute_parameterized_query(const sqlite3* db, const char* sql_que
 
 static int __prepare_insert_query(sqlite3_stmt* stmt, va_list args, int arg_count)
 {
-    UNUSED_VAR(arg_count);
+    UNUSED(arg_count);
     return sqlite3_bind_text(stmt, 1, va_arg(args, char*), -1, SQLITE_STATIC)   // Add 'task'.
         || sqlite3_bind_int64(stmt, 2, va_arg(args, time_t));                   // Add 'created_at'.
 }
 
 static int __prepare_id_query(sqlite3_stmt* stmt, va_list args, int arg_count)
 {
-    UNUSED_VAR(arg_count);
+    UNUSED(arg_count);
     return sqlite3_bind_int(stmt, 1, va_arg(args, int));    // Add 'id'.
 }
 
 static int __prepare_task_and_id_query(sqlite3_stmt* stmt, va_list args, int arg_count)
 {
-    UNUSED_VAR(arg_count);
+    UNUSED(arg_count);
     return sqlite3_bind_text(stmt, 1, va_arg(args, char*), -1, SQLITE_STATIC)   // Add 'new_task'.
         || sqlite3_bind_int(stmt, 2, va_arg(args, int));                        // Add 'id'.
 }
 
 /* Private Functions - Callbacks */
 
-static int __callback_count_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names)
+static int __callback_count_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names)
 {
+    UNUSED(column_amount, column_names);
+
     *((int*)custom_state) = atoi(column_contents[0]);
     return 0;
 }
 
-static int __callback_select_tasks(void* custom_state, UNUSED int column_amount, char** column_contents, UNUSED char** column_names)
+static int __callback_select_tasks(void* custom_state, int column_amount, char** column_contents, char** column_names)
 {
+    UNUSED(column_amount, column_names);
+
     db_tasks* db_tasks = custom_state;
 
     // Set the array of ids.

@@ -43,7 +43,7 @@
     /// @param db The database.
     /// @param id The ID of the task.
     /// @return The requested task, or NULL if it's not found.
-    extern db_task get_task(const sqlite3* db, int id);
+    extern db_task get_task(const sqlite3* db, const int id);
 
     /// @brief Gets all tasks in the database.
     /// @attention Must be manually deallocated!
@@ -60,7 +60,7 @@
     /// @param db The database.
     /// @param id The ID of the task.
     /// @return True if the task exists, False otherwise.
-    extern bool task_exists(const sqlite3* db, int id);
+    extern bool task_exists(const sqlite3* db, const int id);
 
     /// @brief Deallocates the memory used by the specified db_task.
     /// @param db_task The db_task to deallocate memory from.
@@ -80,12 +80,12 @@
     /// @param db The database.
     /// @param id The ID of the task to be removed.
     /// @return True if the task was successfully removed from the database, False otherwise.
-    extern bool delete_task(const sqlite3* db, int id);
+    extern bool delete_task(const sqlite3* db, const int id);
 
     /// @brief Updates the task with the specified ID in the database.
     /// @param db The database.
     /// @param id The ID of the task.
     /// @param new_task The new content of the task.
     /// @return True if the task was successfully updated, False otherwise.
-    extern bool update_task(const sqlite3* db, int id, const char* new_task);
+    extern bool update_task(const sqlite3* db, const int id, const char* new_task);
 #endif // SQLITEDB_H
