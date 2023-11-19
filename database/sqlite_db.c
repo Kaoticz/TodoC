@@ -121,7 +121,7 @@ int count_tasks(const sqlite3* db)
 
 bool task_exists(const sqlite3* db, int id)
 {
-    bool task_exists = false;
+    int task_exists = 0;
     return (__execute_parameterized_query(db, "SELECT 1 FROM tasks WHERE id = ? LIMIT 1;", &task_exists, __parameterized_callback_count_tasks, __prepare_id_query, 1, id))
         && task_exists;
 }
@@ -132,7 +132,8 @@ db_task get_task(const sqlite3* db, int id)
 
     db_task db_task = {
         .length = 0,
-        .task = NULL};
+        .task = NULL
+    };
 
     if (!exists)
         return db_task;

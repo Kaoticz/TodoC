@@ -1,5 +1,10 @@
 #include "./core.h"
 
+/* Private Variables */
+
+/// @brief The amount of characters a frame must have.
+static const int __frame_char_amount = 25;
+
 /* Function Prototypes */
 
 /// @brief Prints the main menu of the program.
@@ -10,16 +15,28 @@ static void __print_menu(char* optional_message);
 /// @param min The minimum integer expected.
 /// @param max The maximum integer expected.
 /// @return The integer input by the user. If the user attempted to input
-/// @return an integer outside the specified range, it returns zero instead.
-/// @return If zero is within the range, it returns "min - 1".
+/// @return an integer outside the specified range, it returns "min - 1" instead.
 static int __get_user_int_input(int min, int max);
+
+/// @brief Gets a valid integer input from the user within the specified range.
+/// @param min The minimum integer expected.
+/// @param max The maximum integer expected.
+/// @param message The message to be displayed to the user.
+/// @return The integer input by the user.
+static int __get_valid_user_int_input(int min, int max, const char* message);
 
 /// @brief Invokes the appropriate action according to the input provided by the user.
 /// @param input The user's input.
 /// @param message The message returned by the operation. May be NULL.
 /// @return Zero if the operation executed successfuly or failed in a non-critical way,
 /// @return non-zero if a critical error occurred and the program must shutdown.
-static int __dispatcher(int input, char* message);
+static int __dispatcher(const int input, char* message);
+
+/// @brief Writes the task of the specified ID to stdout.
+/// @param task_id The ID of the task.
+/// @param message The message returned by the operation. May be NULL.
+/// @return True if the task was printed, False otherwise.
+static bool __print_one_task(const int task_id, char* message);
 
 /// @brief Writes all tasks to stdout.
 /// @param message The message returned by the operation. May be NULL.
@@ -33,7 +50,7 @@ static void __prompt_and_wait(char* message);
 /// @brief Writes the specified character to stdout by the specified amount.
 /// @param character The character to be printed.
 /// @param amount How many times the character should be printed.
-static void __print_char(char character, int amount);
+static void __print_char(const char character, const int amount);
 
 /* Public Functions */
 
@@ -46,6 +63,7 @@ int app_loop()
     {
         clear_console();
         __print_menu(message);
+        printf("> ");
 
         input = __get_user_int_input(0, 5);
         status_code = __dispatcher(input, message);
@@ -91,24 +109,45 @@ static int __get_user_int_input(int min, int max)
         swap(&min, &max);
 
     int input = 0;
-    printf("> ");
     scanf("%d", &input);
     flush(stdin);
 
     return (input >= min && input <= max)
         ? input
-        : (min <= 0)
-            ? min - 1
-            : 0;
+        : min - 1;
 }
 
-static int __dispatcher(int input, char* message)
+static int __get_valid_user_int_input(int min, int max, const char* message)
+{
+    int input, fail_code = min - 1;
+
+    do
+    {
+        printf(message);
+        input = __get_user_int_input(min, max);
+    } while (input == fail_code);
+
+    return input;
+}
+
+static int __dispatcher(const int input, char* message)
 {
     int status_code = 0;
     clear_console();
 
     switch (input)
     {
+        case 3:
+            break;
+        case 4:
+        {
+            int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
+            clear_console();
+
+            if (__print_one_task(task_id, message))
+                __prompt_and_wait("Press Enter to continue.");
+            break;
+        }
         case 5:
             if (__print_all_tasks(message))
                 __prompt_and_wait("Press Enter to continue.");
@@ -119,6 +158,32 @@ static int __dispatcher(int input, char* message)
     };
 
     return status_code;
+}
+
+static bool __print_one_task(const int task_id, char* message)
+{
+    const sqlite3* db = get_db();
+    db_task db_task = get_task(db, task_id);
+
+    if (db_task.task == NULL)
+    {
+        sprintf(message, "Task of ID %d was not found.", task_id);
+        return false;
+    }
+
+    __print_char('=', __frame_char_amount);
+    printf(NEWLINE);
+
+    printf("%s" NEWLINE, db_task.task);
+
+    __print_char('=', __frame_char_amount);
+    printf(NEWLINE);
+
+    // Cleanup
+    sqlite3_close((sqlite3*)db);
+    free_db_task(&db_task);
+
+    return true;
 }
 
 static bool __print_all_tasks(char* message)
@@ -132,13 +197,13 @@ static bool __print_all_tasks(char* message)
         return false;
     }
 
-    __print_char('=', 20);
+    __print_char('=', __frame_char_amount);
     printf(NEWLINE);
 
     for (int index = 0; index < db_tasks.amount; index++)
-        printf("--- Note %d ---" NEWLINE "%s" NEWLINE, db_tasks.task_ids[index], db_tasks.tasks[index]);
+        printf("--- Note ID: %d ---" NEWLINE "%s" NEWLINE, db_tasks.task_ids[index], db_tasks.tasks[index]);
 
-    __print_char('=', 20);
+    __print_char('=', __frame_char_amount);
     printf(NEWLINE);
 
     // Cleanup
@@ -154,7 +219,7 @@ static void __prompt_and_wait(char* message)
     flush(stdin);
 }
 
-static void __print_char(char character, int amount)
+static void __print_char(const char character, const int amount)
 {
     for (int count = 0; count < amount; count++)
         printf("%c", character);
