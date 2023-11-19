@@ -32,6 +32,12 @@ static int __get_valid_user_int_input(int min, int max, const char* message);
 /// @return non-zero if a critical error occurred and the program must shutdown.
 static int __dispatcher(const int input, char* message);
 
+/// @brief Deletes the specified task from the database.
+/// @param task_id The Id of the task.
+/// @param message The message returned by the operation. May be NULL.
+/// @return True if the task was deleted, False otherwise.
+static bool __delete_one_task(const int task_id, char* message);
+
 /// @brief Writes the task of the specified ID to stdout.
 /// @param task_id The ID of the task.
 /// @param message The message returned by the operation. May be NULL.
@@ -68,13 +74,13 @@ int app_loop()
         input = __get_user_int_input(0, 5);
         status_code = __dispatcher(input, message);
 
-        if (status_code != 0)
+        if (status_code != EXIT_SUCCESS)
         {
             fprintf(stderr, message);
             return status_code;
         }
 
-    } while (input != 0);
+    } while (input != APP_EXIT);
 
     clear_console();
 
@@ -94,12 +100,13 @@ static void __print_menu(char* optional_message)
     printf(
         "Welcome to TodoC!" NEWLINE
         "Select one of the options below:" NEWLINE
-        "1. Create a new note." NEWLINE
-        "2. Edit a note." NEWLINE
-        "3. Delete a note." NEWLINE
-        "4. Read a specific note." NEWLINE
-        "5. Read all notes." NEWLINE
-        "0. Exit." NEWLINE
+        "%d. Create a new note." NEWLINE
+        "%d. Edit a note." NEWLINE
+        "%d. Delete a note." NEWLINE
+        "%d. Read a specific note." NEWLINE
+        "%d. Read all notes." NEWLINE
+        "%d. Exit." NEWLINE,
+        CREATE_TASK, EDIT_TASK, DELETE_TASK, READ_TASK, READ_ALL_TASKS, APP_EXIT
     );
 }
 
@@ -137,9 +144,16 @@ static int __dispatcher(const int input, char* message)
 
     switch (input)
     {
-        case 3:
+        case DELETE_TASK:
+        {
+            int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
+            clear_console();
+
+            if (__print_one_task(task_id, message))
+                __delete_one_task(task_id, message);
             break;
-        case 4:
+        }
+        case READ_TASK:
         {
             int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
             clear_console();
@@ -148,7 +162,7 @@ static int __dispatcher(const int input, char* message)
                 __prompt_and_wait("Press Enter to continue.");
             break;
         }
-        case 5:
+        case READ_ALL_TASKS:
             if (__print_all_tasks(message))
                 __prompt_and_wait("Press Enter to continue.");
             break;
@@ -160,6 +174,27 @@ static int __dispatcher(const int input, char* message)
     return status_code;
 }
 
+static bool __delete_one_task(const int task_id, char* message)
+{
+    printf("Are you sure you want to delete this note? Type %d to confirm: ", task_id);
+
+    int input = __get_user_int_input(task_id, task_id);
+
+    if (input != task_id)
+        return false;
+
+    const sqlite3* db = get_db();
+    bool deleted = delete_task(db, task_id);
+
+    // Cleanup
+    sqlite3_close((sqlite3*)db);
+
+    if (deleted)
+        sprintf(message, "Note of ID %d has been successfully deleted.", task_id);
+
+    return deleted;
+}
+
 static bool __print_one_task(const int task_id, char* message)
 {
     const sqlite3* db = get_db();
@@ -167,7 +202,7 @@ static bool __print_one_task(const int task_id, char* message)
 
     if (db_task.task == NULL)
     {
-        sprintf(message, "Task of ID %d was not found.", task_id);
+        sprintf(message, "Note of ID %d was not found.", task_id);
         return false;
     }
 
