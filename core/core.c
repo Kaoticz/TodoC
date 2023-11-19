@@ -25,37 +25,54 @@ static int __get_user_int_input(int min, int max);
 /// @return The integer input by the user.
 static int __get_valid_user_int_input(int min, int max, const char* message);
 
+/// @brief Gets a multi-line string input from the user.
+/// @attention Requires the usert o press Ctrl + Z to get out of the input loop.
+/// @param optional_message An optional message to be printed to the user.
+/// @return The string input by the user.
+static const char* get_user_text_input(const char* optional_message);
+
 /// @brief Invokes the appropriate action according to the input provided by the user.
+/// @param db The database.
 /// @param input The user's input.
 /// @param message The message returned by the operation. May be NULL.
 /// @return Zero if the operation executed successfuly or failed in a non-critical way,
 /// @return non-zero if a critical error occurred and the program must shutdown.
-static int __dispatcher(const int input, char* message);
+static int __dispatcher(const sqlite3* db, const int input, char* message);
 
 /// @brief Creates a new task.
+/// @param db The database.
 /// @param task The content of the task.
 /// @param message The message returned by the operation. May be NULL.
 /// @return True if the task was created, False otherwise.
-static bool __create_task(const char* task, char* message);
+static bool __create_task(const sqlite3* db, const char* task, char* message);
 
-static bool __edit_task(const int task_id, const char* task, char* message);
+/// @brief Updates the specified task with new content.
+/// @param db The database.
+/// @param task_id The ID of the task.
+/// @param task The new content of the task.
+/// @param message The message returned by the operation. May be NULL.
+/// @return True if the task was updated, False otherwise.
+static bool __edit_task(const sqlite3* db, const int task_id, const char* task, char* message);
 
 /// @brief Deletes the specified task from the database.
+/// @param db The database.
 /// @param task_id The Id of the task.
 /// @param message The message returned by the operation. May be NULL.
 /// @return True if the task was deleted, False otherwise.
-static bool __delete_task(const int task_id, char* message);
+static bool __delete_task(const sqlite3* db, const int task_id, char* message);
 
 /// @brief Writes the task of the specified ID to stdout.
+/// @param db The database.
 /// @param task_id The ID of the task.
 /// @param message The message returned by the operation. May be NULL.
 /// @return True if the task was printed, False otherwise.
-static bool __print_task(const int task_id, char* message);
+static bool __print_task(const sqlite3* db, const int task_id, char* message);
 
 /// @brief Writes all tasks to stdout.
+/// @param db The database.
 /// @param message The message returned by the operation. May be NULL.
 /// @return True if at least one task was printed out, False if no tasks were found.
-static bool __print_all_tasks(char* message);
+static bool __print_all_tasks(const sqlite3* db, char* message);
 
 /// @brief Prompts the user to press Enter.
 /// @param message The message to be shown to the user.
@@ -72,6 +89,7 @@ int app_loop()
 {
     int status_code = 0, input = 0;
     char message[64] = { 0 };
+    const sqlite3* db = get_db();
 
     do
     {
@@ -80,7 +98,7 @@ int app_loop()
         printf("> ");
 
         input = __get_user_int_input(0, 5);
-        status_code = __dispatcher(input, message);
+        status_code = __dispatcher(db, input, message);
 
         if (status_code != EXIT_SUCCESS)
         {
@@ -91,6 +109,7 @@ int app_loop()
     } while (input != APP_EXIT);
 
     clear_console();
+    sqlite3_close((sqlite3*)db);
 
     return 0;
 }
@@ -145,22 +164,83 @@ static int __get_valid_user_int_input(int min, int max, const char* message)
     return input;
 }
 
-static int __dispatcher(const int input, char* message)
+static const char* get_user_text_input(const char* optional_message)
+{
+    // Print the instructions header.
+    if (optional_message != NULL)
+        printf(optional_message);
+
+    printf(NEWLINE "Press \"Enter + Ctrl + Z + Enter\" to save your note." NEWLINE);
+    __print_char('=', __frame_char_amount);
+    printf(NEWLINE);
+
+    // Set the variables.
+    char current_char = '\0';
+    int buffer_length = 16 * sizeof(char);
+    int buffer_position = 0;
+    char* buffer = malloc(buffer_length);
+
+    // Start listening to SIGTSTP (Ctrl + Z).
+    start_sigtstp_handler();
+
+    while (current_char != EOF)
+    {
+        current_char = getchar();
+
+        if (!is_typing_allowed())
+            break;
+
+        if (buffer_position >= buffer_length - 1)
+        {
+            buffer_length *= 2;
+            buffer = realloc(buffer, buffer_length);
+        }
+
+        buffer[buffer_position++] = current_char;
+    }
+
+    // Finalize the string by replacing the last
+    // newline with a null terminator character.
+    buffer[buffer_position - 1] = '\0';
+
+    return buffer;
+}
+
+static int __dispatcher(const sqlite3* db, const int menu_selection, char* message)
 {
     int status_code = 0;
     clear_console();
 
-    switch (input)
+    switch (menu_selection)
     {
         case CREATE_TASK:
-            __create_task("Hello new task!", message);
+        {
+            const char* input = get_user_text_input("Type your new note below.");
+            const size_t input_length = strlen(input);
+
+            if (input_length != 0 && strspn(input, NEWLINE) != input_length)
+                __create_task(db, input, message);
+
+            free((char*)input);
+
             break;
+        }
         case EDIT_TASK:
         {
             int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
             clear_console();
 
-            __edit_task(task_id, "New task!", message);
+            if (!__print_task(db, task_id, message))
+                break;
+
+            const char* input = get_user_text_input("Type your updated note below.");
+            const size_t input_length = strlen(input);
+
+            if (input_length != 0 && strspn(input, NEWLINE) != input_length)
+                __edit_task(db, task_id, input, message);
+
+            free((char*)input);
+
             break;
         }
         case DELETE_TASK:
@@ -168,14 +248,14 @@ static int __dispatcher(const int input, char* message)
             int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
             clear_console();
 
-            if (!__print_task(task_id, message))
+            if (!__print_task(db, task_id, message))
                 break;
 
             printf("Are you sure you want to delete this note? Type %d to confirm: ", task_id);
             int input = __get_user_int_input(task_id, task_id);
 
             if (input == task_id)
-                __delete_task(task_id, message);
+                __delete_task(db, task_id, message);
             break;
         }
         case READ_TASK:
@@ -183,12 +263,12 @@ static int __dispatcher(const int input, char* message)
             int task_id = __get_valid_user_int_input(1, INT_MAX, "Type the ID of the note: ");
             clear_console();
 
-            if (__print_task(task_id, message))
+            if (__print_task(db, task_id, message))
                 __prompt_and_wait("Press Enter to continue.");
             break;
         }
         case READ_ALL_TASKS:
-            if (__print_all_tasks(message))
+            if (__print_all_tasks(db, message))
                 __prompt_and_wait("Press Enter to continue.");
             break;
         default:
@@ -199,14 +279,9 @@ static int __dispatcher(const int input, char* message)
     return status_code;
 }
 
-static bool __create_task(const char* task, char* message)
+static bool __create_task(const sqlite3* db, const char* task, char* message)
 {
-    const sqlite3* db = get_db();
     bool inserted = insert_task(db, task);
-
-    // Cleanup
-    sqlite3_close((sqlite3*)db);
-
     const char* returning_message = (inserted)
         ? "Note created successfully."
         : "An error occurred when attempting to create a note.";
@@ -216,14 +291,9 @@ static bool __create_task(const char* task, char* message)
     return inserted;
 }
 
-static bool __edit_task(const int task_id, const char* task, char* message)
+static bool __edit_task(const sqlite3* db, const int task_id, const char* task, char* message)
 {
-    const sqlite3* db = get_db();
     bool updated = update_task(db, task_id, task);
-
-    // Cleanup
-    sqlite3_close((sqlite3*)db);
-
     const char* returning_message = (updated)
         ? "Note updated successfully."
         : "An error occurred when attempting to update a note.";
@@ -233,14 +303,9 @@ static bool __edit_task(const int task_id, const char* task, char* message)
     return updated;
 }
 
-static bool __delete_task(const int task_id, char* message)
+static bool __delete_task(const sqlite3* db, const int task_id, char* message)
 {
-    const sqlite3* db = get_db();
     bool deleted = delete_task(db, task_id);
-
-    // Cleanup
-    sqlite3_close((sqlite3*)db);
-
     const char* returning_message = (deleted)
         ? "Note of ID %d has been successfully deleted."
         : "An error occurred when attempting to delete note of ID %d. Entry most likely was not found.";
@@ -250,16 +315,13 @@ static bool __delete_task(const int task_id, char* message)
     return deleted;
 }
 
-static bool __print_task(const int task_id, char* message)
+static bool __print_task(const sqlite3* db, const int task_id, char* message)
 {
-    const sqlite3* db = get_db();
     db_task db_task = get_task(db, task_id);
 
     if (db_task.task == NULL)
     {
         sprintf(message, "Note of ID %d was not found.", task_id);
-        sqlite3_close((sqlite3*)db);
-
         return false;
     }
 
@@ -272,22 +334,18 @@ static bool __print_task(const int task_id, char* message)
     printf(NEWLINE);
 
     // Cleanup
-    sqlite3_close((sqlite3*)db);
     free_db_task(&db_task);
 
     return true;
 }
 
-static bool __print_all_tasks(char* message)
+static bool __print_all_tasks(const sqlite3* db, char* message)
 {
-    const sqlite3* db = get_db();
     db_tasks db_tasks = get_all_tasks(db);
 
     if (db_tasks.amount <= 0)
     {
         strcpy(message, "No notes were found.");
-        sqlite3_close((sqlite3*)db);
-
         return false;
     }
 
@@ -301,7 +359,6 @@ static bool __print_all_tasks(char* message)
     printf(NEWLINE);
 
     // Cleanup
-    sqlite3_close((sqlite3*)db);
     free_db_tasks(&db_tasks);
 
     return true;
