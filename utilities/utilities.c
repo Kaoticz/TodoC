@@ -21,8 +21,10 @@ const char* get_executable_path()
     buffer[length] = '\0';
 
     // Create the result
-    char* result = malloc(length);
+    char* result = malloc(length + 1);
     memcpy(result, buffer, length);
+
+    result[length] = '\0';
 
     return result;
 }
@@ -44,12 +46,14 @@ const char* get_executable_directory()
 
 const char* str_append(const char* destination, const char* source)
 {
-    int dest_length = strlen(destination) * sizeof(char);
-    int source_length = strlen(source) * sizeof(char);
-    char* result = malloc(dest_length + source_length);
+    size_t dest_length = strlen(destination);
+    size_t source_length = strlen(source);
+    char* result = malloc(dest_length + source_length + 1);
     
     mempcpy(result, destination, dest_length);
     mempcpy(result + dest_length, source, source_length);
+
+    result[dest_length + source_length] = '\0';
 
     return result;
 }

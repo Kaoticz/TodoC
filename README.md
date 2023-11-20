@@ -2,6 +2,8 @@
 
 This repository contains a university assignment for a simple "To-Do" program written in C. The program performs CRUD operations with strings in a SQLite database.
 
+Compiled on Arch Linux with GCC 13.2.1
+
 ## How to use
 
 To build the program, navigate to the root directory and execute the following command:
@@ -43,6 +45,7 @@ Additionally, the program demonstrates:
 - An object-oriented-like structure for source files, with "private" members declared using the static modifier and "public" members declared in the header file.
 
 ## License
+
 TodoC, a terminal-based "to-do" application written in C.
 
 Copyright (C) 2023 Kotz
