@@ -103,4 +103,16 @@
     /// @param count Unused parameter so the variadic function compiles.
     /// @param ... The arguments expanded by "__VA_ARGS__".
     extern void dev_null(int count, ...);
+
+    /// @brief Returns the larger of two numbers.
+    /// @param x The first number.
+    /// @param y The second number.
+    /// @return The largest number between x and y.
+    extern int max(const double x, const double y);
+
+    /// @brief Returns the smallest of two numbers.
+    /// @param x The first number.
+    /// @param y The second number.
+    /// @return The smallest number between x and y.
+    extern int min(const double x, const double y);
 #endif // UTILITIES_H

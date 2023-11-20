@@ -151,3 +151,13 @@ void dev_null(int count, ...)
 {
     (void)(count);
 }
+
+int max(const double x, const double y)
+{
+    return (x > y) ? x : y;
+}
+
+int min(const double x, const double y)
+{
+    return (x < y) ? x : y;
+}

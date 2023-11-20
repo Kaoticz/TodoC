@@ -185,7 +185,7 @@ static const char* get_user_text_input(const char* optional_message)
     // Start listening to SIGTSTP (Ctrl + Z).
     start_sigtstp_handler();
 
-    while (current_char != EOF)
+    do
     {
         current_char = getchar();
 
@@ -199,11 +199,11 @@ static const char* get_user_text_input(const char* optional_message)
         }
 
         buffer[buffer_position++] = current_char;
-    }
+    } while (current_char != EOF);
 
     // Finalize the string by replacing the last
     // newline with a null terminator character.
-    buffer[buffer_position - 1] = '\0';
+    buffer[max(0, buffer_position - 1)] = '\0';
 
     return buffer;
 }
