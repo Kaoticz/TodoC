@@ -108,11 +108,11 @@
     /// @param x The first number.
     /// @param y The second number.
     /// @return The largest number between x and y.
-    extern double max(const double x, const double y);
+    extern int max(const int x, const int y);
 
     /// @brief Returns the smallest of two numbers.
     /// @param x The first number.
     /// @param y The second number.
     /// @return The smallest number between x and y.
-    extern double min(const double x, const double y);
+    extern int min(const int x, const int y);
 #endif // UTILITIES_H
