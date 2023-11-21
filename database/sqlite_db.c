@@ -99,14 +99,14 @@ const sqlite3* create_sqlite_db(const char* db_location)
 {
     if (!file_exists(db_location) || is_file_empty(db_location))
     {
-        if (!create_empty_file(db_location) || !__initialize_database(db_location))
+        if (!create_empty_file(db_location) && !__initialize_database(db_location))
             return NULL;
     }
 
     sqlite3* db;
-    const int rc = sqlite3_open(db_location, &db);
+    const int db_code = sqlite3_open(db_location, &db);
 
-    return (rc == SQLITE_OK) ? db : NULL;
+    return (db_code == SQLITE_OK) ? db : NULL;
 }
 
 int count_tasks(const sqlite3* db)
