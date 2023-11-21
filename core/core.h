@@ -2,6 +2,7 @@
     #define CORE_H
 
     #include <stdio.h>
+    #include <errno.h>
     #include "../database/sqlite_db.h"
     #include "../handlers/signal_handlers.h"
     #include "../utilities/utilities.h"

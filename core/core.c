@@ -91,6 +91,12 @@ int app_loop()
     char message[64] = { 0 };
     const sqlite3* db = get_db();
 
+    if (db == NULL)
+    {
+        fprintf(stderr, "The database is corrupted or could not be created due to lack of write permissions. Aborting...");
+        return EPERM;
+    }
+
     do
     {
         clear_console();
@@ -98,6 +104,7 @@ int app_loop()
         printf("> ");
 
         input = __get_user_int_input(0, 5);
+        clear_console();
         status_code = __dispatcher(db, input, message);
 
         if (status_code != EXIT_SUCCESS)
@@ -210,8 +217,6 @@ static const char* get_user_text_input(const char* optional_message)
 
 static int __dispatcher(const sqlite3* db, const int menu_selection, char* message)
 {
-    clear_console();
-
     switch (menu_selection)
     {
         case CREATE_TASK:
@@ -277,7 +282,7 @@ static int __dispatcher(const sqlite3* db, const int menu_selection, char* messa
             break;
     };
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 static bool __create_task(const sqlite3* db, const char* task, char* message)

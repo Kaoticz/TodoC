@@ -31,12 +31,12 @@
     } db_task;
 
     /// @brief Gets the database of this program.
-    /// @return The database.
+    /// @return The database or NULL if the database could not be created or read.
     extern const sqlite3* get_db();
 
     /// @brief Creates and opens a SQLite database at the specified location.
     /// @param db_location The absolute path to the database file.
-    /// @return The database or NULL if the file is not a valid SQLite database.
+    /// @return The database or NULL if the file could not be created or is not a valid SQLite database.
     extern const sqlite3* create_sqlite_db(const char* db_location);
 
     /// @brief Gets the task with the specified ID from the database.

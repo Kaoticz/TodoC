@@ -99,9 +99,7 @@ const sqlite3* create_sqlite_db(const char* db_location)
 {
     if (!file_exists(db_location) || is_file_empty(db_location))
     {
-        create_empty_file(db_location);
-
-        if (!__initialize_database(db_location))
+        if (!create_empty_file(db_location) || !__initialize_database(db_location))
             return NULL;
     }
 

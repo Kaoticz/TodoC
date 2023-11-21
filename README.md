@@ -31,7 +31,7 @@ make clean
 While this program may be considered overengineered for its purpose, it effectively showcases various features of the C language, including but not limited to:
 
 - Declaration and usage of both local and global variables.
-- Implementation of control flow structures in accordance with the Structured Programming paradigm (i.e., the use of goto is prohibited).
+- Implementation of control flow structures in accordance with the Structured Programming paradigm (i.e., the use of `goto` is prohibited).
 - Utilization of pointers.
 - Implementation of function pointers and callbacks.
 - Manual memory management.
@@ -42,7 +42,7 @@ Additionally, the program demonstrates:
 
 - Integration with a relational database (SQLite).
 - Inclusion of a Makefile for streamlined compilation.
-- An object-oriented-like structure for source files, with "private" members declared using the static modifier and "public" members declared in the header file.
+- An object-oriented-like structure for source files, with "private" members declared using the `static` modifier and "public" members declared in the header file.
 
 ## License
 
