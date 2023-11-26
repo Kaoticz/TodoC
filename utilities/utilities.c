@@ -5,12 +5,7 @@
 const char* get_executable_path()
 {
     char buffer[MAX_PATH_LENGTH];
-
-#ifdef _WIN32
-    DWORD length = GetModuleFileName(NULL, buffer, MAX_PATH);
-#else
     ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-#endif
 
     if (length <= 0)
     {
@@ -116,11 +111,7 @@ time_t get_current_time()
 
 int clear_console()
 {
-    #ifdef _WIN32
-        return system("cls");
-    #else
-        return system("clear");
-    #endif
+    return system("clear");
 }
 
 void swap(int* x, int* y)

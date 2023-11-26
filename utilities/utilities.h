@@ -5,22 +5,7 @@
     #include <stdbool.h>
     #include <time.h>
 
-    #ifdef _WIN32
-        #include <windows.h>
-        #include <stdio.h>
-
-        /// @brief The maximum length a directory path can have.
-        #define MAX_PATH_LENGTH MAX_PATH
-
-        /// @brief The character that separates directories in a file system path.
-        #define DIRECTORY_SEPARATOR_CHAR '\\'
-
-        /// @brief The character that separates directories in a file system path.
-        #define DIRECTORY_SEPARATOR "\\"
-
-        /// @brief The platform-specific newline.
-        #define NEWLINE "\r\n"
-    #elif __unix__ // _WIN32
+    #ifdef __unix__
         #include <stdio.h>
         #include <stdlib.h>
         #include <unistd.h>
@@ -39,7 +24,7 @@
         #define NEWLINE "\n"
     #else   // __unix__
         #error "This platform is not supported."
-    #endif
+    #endif  // not __unix__
 
     /// @brief Marks multiple variables as unused.
     #define UNUSED(...) dev_null(0, __VA_ARGS__);

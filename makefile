@@ -9,11 +9,7 @@ BIN_DIR = bin
 EXEC_NAME = main
 
 # Source files
-ifeq ($(OS),Windows_NT)
-    SRCS = $(wildcard $(SRC_DIR)/*.c)
-else
-    SRCS = $(shell find $(SRC_DIR)/ -name '*.c')
-endif
+SRCS = $(shell find $(SRC_DIR)/ -name '*.c')
 
 # Object files in the obj/ directory
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))

@@ -2,9 +2,11 @@
 
 This repository contains a university assignment for a simple "To-Do" program written in C. The program performs CRUD operations with strings in a SQLite database.
 
-Compiled on Arch Linux with GCC 13.2.1
+Developed on Arch Linux with GCC 13.2.1
 
-## How to use
+## How to build
+
+### Native
 
 To build the program, navigate to the root directory and execute the following command:
 
@@ -25,6 +27,30 @@ To delete all binaries and clean the project, execute:
 ```
 make clean
 ```
+
+### Docker
+
+If you're not on Arch Linux, you can alternatively run the application in a Docker container.
+
+To create the container's image, execute:
+
+```
+docker build -t todoc ./
+```
+
+To create and run the container, execute:
+
+```
+docker run -it todoc
+```
+
+To run a container that already exists, execute:
+
+```
+docker start my_container_name && docker attach my_container_name
+```
+
+Then type `5` and press Enter, because `stdout` of the attached container might not update right away when the connection is established.
 
 ## Details
 
